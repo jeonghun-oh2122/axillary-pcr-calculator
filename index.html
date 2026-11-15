@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Probability of axillary pCR after neoadjuvant chemotherapy in cN2-3 breast cancer (Oh et al., npj Breast Cancer 2025).">
+<title>cN2–3 Axillary pCR Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: two-column clinical form — inputs left, sticky result panel right; stacks on phones. White ground, one ink-blue accent. */
+:root{
+  --bg:#ffffff; --fg:#14202b; --muted:#5b6872; --line:#dde3e8; --field:#ffffff;
+  --accent:#1d4e89; --accent-ink:#ffffff; --pos:#1d6b4f; --neg:#a2452f; --track:#eef1f4;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11161b; --fg:#e6ebef; --muted:#97a3ad; --line:#2a333b; --field:#161d23;
+  --accent:#7fb0e8; --accent-ink:#0d1a28; --pos:#6fc39f; --neg:#e38e76; --track:#222b33; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11161b; --fg:#e6ebef; --muted:#97a3ad; --line:#2a333b; --field:#161d23;
+  --accent:#7fb0e8; --accent-ink:#0d1a28; --pos:#6fc39f; --neg:#e38e76; --track:#222b33; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 48px}
+.wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+header{display:flex;flex-direction:column;gap:6px;border-bottom:1px solid var(--line);padding-bottom:20px}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(22px,3.4vw,30px);font-weight:600;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:0;max-width:68ch}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:40px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:minmax(0,1fr);gap:28px}}
+form{display:flex;flex-direction:column;gap:22px;min-width:0}
+fieldset{border:0;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;min-width:0}
+legend,.lbl{font-weight:600;font-size:14px;padding:0;margin-bottom:8px}
+.hint{font-size:12.5px;color:var(--muted)}
+.seg{display:flex;flex-wrap:wrap;border:1px solid var(--line);border-radius:6px;overflow:hidden;width:fit-content;max-width:100%}
+.seg label{position:relative;cursor:pointer}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg span{display:block;padding:8px 14px;font-size:14px;border-right:1px solid var(--line);white-space:nowrap;color:var(--fg)}
+.seg label:last-child span{border-right:0}
+.seg input:checked+span{background:var(--accent);color:var(--accent-ink)}
+.seg input:focus-visible+span{outline:2px solid var(--accent);outline-offset:-4px}
+.pair{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.num{display:flex;flex-direction:column;gap:4px}
+.num small{font-size:12px;color:var(--muted)}
+.num .box{display:flex;align-items:center;border:1px solid var(--line);border-radius:6px;background:var(--field)}
+.num input{width:88px;border:0;background:transparent;color:var(--fg);font:500 15px var(--mono);padding:8px 4px 8px 10px;font-variant-numeric:tabular-nums}
+.num input:focus{outline:none}
+.num .box:focus-within{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.num .u{font:13px var(--mono);color:var(--muted);padding-right:10px}
+.ratio{font:500 14px var(--mono);color:var(--muted);padding-bottom:9px;font-variant-numeric:tabular-nums}
+.ratio b{color:var(--fg);font-weight:500}
+.mode{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);cursor:pointer;width:fit-content}
+.mode input{accent-color:var(--accent);width:16px;height:16px}
+.err{font-size:12.5px;color:var(--neg)}
+aside{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;gap:18px;
+  border:1px solid var(--line);border-radius:8px;padding:22px;min-width:0}
+@media (max-width:820px){aside{position:static}}
+.tag{font-family:var(--mono);font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.big{font-size:56px;font-weight:600;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--accent)}
+.big small{font-size:24px;font-weight:500}
+.ci{font:14px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.meter{position:relative;height:10px;background:var(--track);border-radius:5px}
+.meter .band{position:absolute;top:0;bottom:0;background:var(--accent);opacity:.28;border-radius:5px}
+.meter .pt{position:absolute;top:-4px;width:3px;height:18px;background:var(--accent);border-radius:2px;transform:translateX(-50%)}
+.scale{display:flex;justify-content:space-between;font:11px var(--mono);color:var(--muted);margin-top:4px}
+.alt{display:flex;justify-content:space-between;gap:12px;border-top:1px solid var(--line);padding-top:14px;font-size:14px}
+.alt .v{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.contrib{display:flex;flex-direction:column;gap:7px;border-top:1px solid var(--line);padding-top:14px}
+.row{display:grid;grid-template-columns:minmax(0,1fr) 120px 52px;gap:10px;align-items:center;font-size:13px}
+.row .bar{position:relative;height:8px}
+.row .bar::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:1px;background:var(--line)}
+.row .bar i{position:absolute;top:0;bottom:0;border-radius:2px}
+.row .val{font:12px var(--mono);text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.legend{display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);padding-left:calc(100% - 182px);gap:6px}
+.notes{border-top:1px solid var(--line);padding-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;font-size:13.5px;color:var(--muted)}
+.notes h2{font-size:13px;font-weight:600;color:var(--fg);margin:0 0 6px;text-transform:uppercase;letter-spacing:.05em}
+.notes p{margin:0 0 8px;max-width:65ch}
+.notes a{color:var(--accent)}
+.ex{font:12px var(--mono);color:var(--muted)}
+button.reset{font:13px var(--sans);background:none;border:1px solid var(--line);color:var(--fg);border-radius:6px;padding:6px 12px;cursor:pointer;width:fit-content}
+button.reset:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+body{margin:0}
+[hidden]{display:none!important}
+img{max-width:100%}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Seoul National University Bundang Hospital · Breast Surgery</div>
+    <h1>Axillary pCR after NAC in cN2–3 breast cancer</h1>
+    <p class="sub">Estimated probability of ypN0 at surgery, from the multivariable logistic model (Model 3) in Oh et al., <i>npj Breast Cancer</i> 2025;11:149.</p>
+  </header>
+
+  <div class="grid">
+    <form id="f" novalidate>
+      <fieldset>
+        <legend>Molecular subtype (pre-NAC biopsy)</legend>
+        <div class="seg" role="radiogroup">
+          <label><input type="radio" name="st" id="st1" value="1"><span>HR+/HER2−</span></label>
+          <label><input type="radio" name="st" id="st2" value="2" checked><span>HR+/HER2+</span></label>
+          <label><input type="radio" name="st" id="st3" value="3"><span>HR−/HER2+</span></label>
+          <label><input type="radio" name="st" id="st4" value="4"><span>HR−/HER2−</span></label>
+        </div>
+      </fieldset>
+
+      <label class="mode"><input type="checkbox" id="direct"> Enter MRI reduction ratios directly (%)</label>
+
+      <fieldset>
+        <legend>Breast lesion on MRI</legend>
+        <div class="pair" id="mrbSizes">
+          <div class="num"><small>Pre-NAC size</small><div class="box"><input id="mrb0" inputmode="decimal" value="3.5"><span class="u">cm</span></div></div>
+          <div class="num"><small>Post-NAC size</small><div class="box"><input id="mrb1" inputmode="decimal" value="1.4"><span class="u">cm</span></div></div>
+          <div class="ratio">reduction <b id="mrbR">–</b></div>
+        </div>
+        <div class="pair" id="mrbDirect" hidden>
+          <div class="num"><small>Reduction ratio</small><div class="box"><input id="mrbP" inputmode="decimal" value="60"><span class="u">%</span></div></div>
+        </div>
+        <div class="err" id="mrbE" hidden></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Axillary lymph node on MRI, short axis</legend>
+        <div class="pair" id="alnSizes">
+          <div class="num"><small>Pre-NAC</small><div class="box"><input id="aln0" inputmode="decimal" value="1.6"><span class="u">cm</span></div></div>
+          <div class="num"><small>Post-NAC</small><div class="box"><input id="aln1" inputmode="decimal" value="0.9"><span class="u">cm</span></div></div>
+          <div class="ratio">reduction <b id="alnR">–</b></div>
+        </div>
+        <div class="pair" id="alnDirect" hidden>
+          <div class="num"><small>Reduction ratio</small><div class="box"><input id="alnP" inputmode="decimal" value="43.8"><span class="u">%</span></div></div>
+        </div>
+        <div class="err" id="alnE" hidden></div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Post-NAC ALN cortical thickness on US</legend>
+        <div class="seg">
+          <label><input type="radio" name="ct" id="ct0" value="0" checked><span>≤ 0.3 cm</span></label>
+          <label><input type="radio" name="ct" id="ct1" value="1"><span>&gt; 0.3 cm</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Number of breast lesions</legend>
+        <div class="seg">
+          <label><input type="radio" name="mf" id="mf0" value="0" checked><span>Unifocal</span></label>
+          <label><input type="radio" name="mf" id="mf1" value="1"><span>Multiple</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Histologic grade (pre-NAC)</legend>
+        <div class="seg">
+          <label><input type="radio" name="gr" id="gr0" value="0"><span>Grade I–II</span></label>
+          <label><input type="radio" name="gr" id="gr1" value="1" checked><span>Grade III</span></label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Ki-67 (pre-NAC)</legend>
+        <div class="pair">
+          <div class="num"><div class="box"><input id="ki" inputmode="decimal" value="30"><span class="u">%</span></div></div>
+        </div>
+        <div class="err" id="kiE" hidden></div>
+      </fieldset>
+
+      <button type="button" class="reset" id="ex">Load example case</button>
+    </form>
+
+    <aside aria-live="polite">
+      <div>
+        <div class="tag" id="caseTag">Example case</div>
+        <div class="tag" style="margin-top:2px">Probability of axillary pCR (ypN0)</div>
+      </div>
+      <div class="big" id="p">–<small>%</small></div>
+      <div>
+        <div class="meter"><div class="band" id="band"></div><div class="pt" id="pt"></div></div>
+        <div class="scale"><span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span></div>
+      </div>
+      <div class="ci" id="ci">95% CI –</div>
+
+      <div class="alt">
+        <span>Model 2 (without subtype, as in the printed nomogram)</span>
+        <span class="v" id="p2">–</span>
+      </div>
+
+      <div class="contrib">
+        <div class="tag">Contribution to log-odds</div>
+        <div id="bars"></div>
+        <div class="legend"><span>← lower</span><span>higher →</span></div>
+      </div>
+    </aside>
+  </div>
+
+  <section class="notes">
+    <div>
+      <h2>Model</h2>
+      <p>Multivariable logistic regression in 258 patients with cN2–3 breast cancer who completed NAC and breast and axillary surgery at SNUBH, 2016–2020 (axillary pCR 49.3% of the full cohort of 276). Apparent AUC 0.90 for Model 3 and 0.82 for Model 2.</p>
+      <p>Reduction ratio = (pre-NAC − post-NAC) / pre-NAC × 100, floored at 0%. Lymph node size uses the short axis.</p>
+    </div>
+    <div>
+      <h2>Use</h2>
+      <p>For research and education. The model is internally developed and not externally validated, so it should not by itself decide whether to omit axillary dissection.</p>
+      <p>Source: <a href="https://doi.org/10.1038/s41523-025-00862-4" target="_blank" rel="noopener">doi.org/10.1038/s41523-025-00862-4</a></p>
+    </div>
+  </section>
+</div>
+
+<script>
+const M3={b:[-3.492244,-1.905061,-0.593822,0.314174,1.394901,3.458527,1.42982,0.026973,0.003852,0.023285],
+V:[[0.59080826,0.02199967,-0.06588353,-0.0349771,-0.0823463,-0.14444752,-0.03070192,-0.00207148,-0.00347995,-0.0033165],[0.02199967,0.14315727,0.0112985,0.00055959,-0.02098611,-0.06131062,-0.02721758,-0.0004199,-0.00028576,-0.00038304],[-0.06588353,0.0112985,0.13626663,0.00411152,-0.0261477,-0.03369964,0.00802664,-0.00027471,-9.714e-05,0.00045841],[-0.0349771,0.00055959,0.00411152,0.14801601,-0.01553447,0.00909384,-0.00720951,0.0002269,-0.00024939,-0.00142369],[-0.0823463,-0.02098611,-0.0261477,-0.01553447,0.24369745,0.11946073,0.1109392,-0.00013891,8.367e-05,0.00016274],[-0.14444752,-0.06131062,-0.03369964,0.00909384,0.11946073,0.28372252,0.10410302,0.00058285,-5.831e-05,0.00066373],[-0.03070192,-0.02721758,0.00802664,-0.00720951,0.1109392,0.10410302,0.25893349,3.701e-05,-0.00025357,-0.00176195],[-0.00207148,-0.0004199,-0.00027471,0.0002269,-0.00013891,0.00058285,3.701e-05,4.107e-05,-7.78e-06,-8.61e-06],[-0.00347995,-0.00028576,-9.714e-05,-0.00024939,8.367e-05,-5.831e-05,-0.00025357,-7.78e-06,8.614e-05,-1.09e-06],[-0.0033165,-0.00038304,0.00045841,-0.00142369,0.00016274,0.00066373,-0.00176195,-8.61e-06,-1.09e-06,0.00013029]]};
+const M2={b:[-2.267254,-1.615325,-0.290049,0.345859,0.026339,0.005987,0.020671],
+V:[[0.38026784,-0.00748651,-0.05744581,-0.03207116,-0.00139497,-0.00265268,-0.00192295],[-0.00748651,0.09723301,0.00196409,0.00267015,-0.00020765,-0.00027381,-0.00013693],[-0.05744581,0.00196409,0.09693885,0.00356526,-0.00023298,-6.927e-05,0.00055211],[-0.03207116,0.00267015,0.00356526,0.10984293,0.00021302,-0.00015467,-0.00114888],[-0.00139497,-0.00020765,-0.00023298,0.00021302,3.039e-05,-6.91e-06,-7.88e-06],[-0.00265268,-0.00027381,-6.927e-05,-0.00015467,-6.91e-06,6.977e-05,-5.48e-06],[-0.00192295,-0.00013693,0.00055211,-0.00114888,-7.88e-06,-5.48e-06,8.644e-05]]};
+const expit=z=>1/(1+Math.exp(-z));
+function predict(m,x){let lp=0;for(let i=0;i<x.length;i++)lp+=m.b[i]*x[i];
+  let v=0;for(let i=0;i<x.length;i++)for(let j=0;j<x.length;j++)v+=x[i]*m.V[i][j]*x[j];
+  const se=Math.sqrt(v);return{p:expit(lp),lo:expit(lp-1.96*se),hi:expit(lp+1.96*se)}}
+const $=id=>document.getElementById(id);
+const num=id=>{const s=$(id).value.trim().replace(',','.');return s===''?NaN:Number(s)};
+const radio=n=>Number(document.querySelector(`input[name="${n}"]:checked`).value);
+function ratio(a,b){return Math.min(100,Math.max(0,(a-b)/a*100))}
+function getRatio(pre,post,pct,err,out){
+  const e=$(err);e.hidden=true;let r;
+  if($('direct').checked){r=num(pct);if(!(r>=0&&r<=100)){e.textContent='Enter a ratio between 0 and 100%.';e.hidden=false;return NaN}}
+  else{const a=num(pre),b=num(post);
+    if(!(a>0)||!(b>=0)){e.textContent='Enter both sizes in cm; the pre-NAC size must be above 0.';e.hidden=false;$(out).textContent='–';return NaN}
+    r=ratio(a,b);$(out).textContent=r.toFixed(1)+'%'}
+  return r}
+let loading=false;
+function update(){
+  if(!loading)$('caseTag').textContent='Entered case';
+  const mrb=getRatio('mrb0','mrb1','mrbP','mrbE','mrbR'), aln=getRatio('aln0','aln1','alnP','alnE','alnR');
+  const ki=num('ki');$('kiE').hidden=ki>=0&&ki<=100;$('kiE').textContent='Enter Ki-67 between 0 and 100%.';
+  if([mrb,aln].some(isNaN)||!(ki>=0&&ki<=100)){$('p').innerHTML='–<small>%</small>';$('ci').textContent='95% CI –';$('p2').textContent='–';$('bars').innerHTML='';return}
+  const ct=radio('ct'),mf=radio('mf'),gr=radio('gr'),st=radio('st');
+  const x3=[1,ct,mf,gr,st===2?1:0,st===3?1:0,st===4?1:0,mrb,aln,ki];
+  const r3=predict(M3,x3), r2=predict(M2,[1,ct,mf,gr,mrb,aln,ki]);
+  const pc=v=>(v*100).toFixed(v<0.1||v>0.9?1:0);
+  $('p').innerHTML=pc(r3.p)+'<small>%</small>';
+  $('ci').textContent=`95% CI ${pc(r3.lo)}–${pc(r3.hi)}%`;
+  $('pt').style.left=(r3.p*100)+'%';$('band').style.left=(r3.lo*100)+'%';$('band').style.width=((r3.hi-r3.lo)*100)+'%';
+  $('p2').textContent=`${pc(r2.p)}% (${pc(r2.lo)}–${pc(r2.hi)})`;
+  const stName={1:'HR+/HER2− (ref.)',2:'HR+/HER2+',3:'HR−/HER2+',4:'HR−/HER2−'}[st];
+  const items=[[`Subtype: ${stName}`,M3.b[4]*x3[4]+M3.b[5]*x3[5]+M3.b[6]*x3[6]],[`MRI breast reduction ${mrb.toFixed(0)}%`,M3.b[7]*mrb],
+    [`MRI ALN reduction ${aln.toFixed(0)}%`,M3.b[8]*aln],[`Cortical thickness ${ct?'> 0.3':'≤ 0.3'} cm`,M3.b[1]*ct],
+    [mf?'Multiple lesions':'Unifocal',M3.b[2]*mf],[gr?'Grade III':'Grade I–II',M3.b[3]*gr],[`Ki-67 ${ki}%`,M3.b[9]*ki]];
+  const max=4;
+  $('bars').innerHTML=items.map(([n,v])=>{const w=Math.min(Math.abs(v),max)/max*50;
+    const c=v>=0?'var(--pos)':'var(--neg)';const left=v>=0?50:50-w;
+    return `<div class="row"><span>${n}</span><span class="bar"><i style="left:${left}%;width:${w}%;background:${c}"></i></span><span class="val">${v>=0?'+':'−'}${Math.abs(v).toFixed(2)}</span></div>`}).join('');
+}
+function syncMode(){const d=$('direct').checked;['mrb','aln'].forEach(k=>{$(k+'Sizes').hidden=d;$(k+'Direct').hidden=!d});update()}
+const EX={mrb0:'3.5',mrb1:'1.4',aln0:'1.6',aln1:'0.9',mrbP:'60',alnP:'43.8',ki:'30',st:'2',ct:'0',mf:'0',gr:'1'};
+function loadEx(){loading=true;for(const[k,v]of Object.entries(EX)){if($(k))$(k).value=v;else document.querySelector(`input[name="${k}"][value="${v}"]`).checked=true}
+  $('direct').checked=false;syncMode();$('caseTag').textContent='Example case';loading=false}
+$('f').addEventListener('input',update);$('f').addEventListener('change',update);
+$('direct').addEventListener('change',syncMode);$('ex').addEventListener('click',loadEx);
+$('f').addEventListener('submit',e=>e.preventDefault());
+loading=true;update();loading=false;
+</script>
+
+</body>
+</html>
